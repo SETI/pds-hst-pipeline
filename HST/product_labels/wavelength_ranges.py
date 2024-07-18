@@ -101,14 +101,14 @@ def wavelength_abbrevs(instrument_id, detector_ids, filter_name):
 
 # Boundaries between the definitions of UV, VIS, and NIR, with tiny adjustments
 # for known filters
-UV_MAX = 400
+UV_MAX  = 400
 VIS_MIN = 388
 VIS_MAX = 702
 NIR_MIN = 647
 
 # This regular expression matches the number inside a filter name, e.g.,
 # 'F606W'. This is generally the center wavelength of the bandpass in nm.
-FILTER_REGEX = re.compile(r"[FG](|[QR])(\d+)([WMNHLX]|LP|AW|BW|BN15)")
+FILTER_REGEX = re.compile(r"[FG][QR]?(\d+)[A-Z].*")
 
 # This is a list of filter/grating names whose ranges would not be correctly
 # inferred from the name based on the usual algorithm. This is needed for two
@@ -123,49 +123,54 @@ FILTER_REGEX = re.compile(r"[FG](|[QR])(\d+)([WMNHLX]|LP|AW|BW|BN15)")
 FILTER_EXCEPTIONS = {
     "CLEAR" : ["UV", "VIS", "NIR"],
     "F130LP": ["UV", "VIS", "NIR"],     # FOC, WFPC2
-    "F165LP": ["UV", "VIS", "NIR"],
+    "F165LP": ["UV", "VIS", "NIR"],     # ACS
     "F180LP": ["UV", "VIS"],            # FOC
-    "F200LP": ["UV", "VIS", "NIR"],
+    "F200LP": ["UV", "VIS", "NIR"],     # WFC3
     "F305LP": ["UV", "VIS"],            # FOC
     "F320LP": ["UV", "VIS"],            # FOC
-    "F350LP": ["UV", "VIS", "NIR"],
+    "F350LP": ["UV", "VIS", "NIR"],     # WFC3
     "F370LP": ["UV", "VIS"],            # FOC
-    "F372M" : ["UV", "VIS"],
+    "F372M" : ["UV", "VIS"],            # FOC
     "F380W" : ["UV", "VIS"],            # WFPC2
     "F410M" : ["UV", "VIS"],            # WFPC2
-    "F430W" : ["UV", "VIS"],
-    "F435W" : ["UV", "VIS"],
-    "F600LP": ["VIS", "NIR"],
+    "F430W" : ["UV", "VIS"],            # FOC
+    "F435W" : ["UV", "VIS"],            # ACS
+    "F600LP": ["VIS", "NIR"],           # WFC3
     "F606W" : ["VIS", "NIR"],           # WFPC2
-    "F622W" : ["VIS", "NIR"],
-    "F625W" : ["VIS", "NIR"],
+    "F622W" : ["VIS", "NIR"],           # WFPC2
+    "F625W" : ["VIS", "NIR"],           # ACS
     "F675W" : ["VIS", "NIR"],           # WFPC2
     "F702W" : ["VIS", "NIR"],           # WFPC2
-    "F718M" : ["VIS", "NIR"],
-    "FQCH4N": ["VIS", "NIR"],           # WFPC2
-    "FQCH4N15": ["VIS", "NIR"],         # WFPC2
-    "FQCH4N33": ["VIS", "NIR"],         # WFPC2
-    "FQCH4P15": ["VIS", "NIR"],         # WFPC2
-    "FQUVN" : ["UV", "VIS"],
-    "FR418N": ["VIS"],                  # WFPC2
-    "FR533N": ["VIS"],                  # WFPC2
-    "FR680N": ["VIS", "NIR"],           # WFPC2
-    "FR868N": ["NIR"],                  # WFPC2
-    "FR459M": ["UV", "VIS"],
-    "G430L" : ["UV", "VIS"],
-    "G430M" : ["UV", "VIS"],
-    "G570H" : ["VIS", "NIR"],
-    "G650L" : ["UV", "VIS", "NIR"],
-    "G750L" : ["VIS", "NIR"],
-    "G750M" : ["VIS", "NIR"],
-    "G780H" : ["VIS", "NIR"],
-    "G800L" : ["VIS", "NIR"],
-    "POL0UV": ["UV", "VIS"],
-    "POL0V" : ["VIS", "NIR"],
-    "POL120UV": ["UV", "VIS"],
-    "POL120V" : ["VIS", "NIR"],
-    "POL60UV" : ["UV", "VIS"],
-    "POL60V"  : ["VIS", "NIR"],
+    "F718M" : ["VIS", "NIR"],           # WF/PC
+    "FQCH4N"   : ["VIS", "NIR"],        # WFPC2
+    "FQCH4N15" : ["VIS", "NIR"],        # WFPC2
+    "FQCH4N33" : ["VIS"],               # WFPC2
+    "FQCH4P15" : ["VIS", "NIR"],        # WFPC2
+    "FQUVN"    : ["UV", "VIS"],         # WFPC2
+    "FQUVN33"  : ["UV", "VIS"],         # WFPC2
+    "FR418N"   : ["UV", "VIS"],         # WFPC2
+    "FR418N18" : ["UV", "VIS"],         # WFPC2
+    "FR418N33" : ["UV", "VIS"],         # WFPC2
+    "FR418P15" : ["UV", "VIS"],         # WFPC2
+    "FR459M"  : ["UV", "VIS"],          # ACS
+    "FR680N"  : ["VIS", "NIR"],         # WFPC2
+    "FR680N18": ["VIS", "NIR"],         # WFPC2
+    "FR680N33": ["NIR"],                # WFPC2
+    "FR680P15": ["VIS", "NIR"],         # WFPC2
+    "G430L" : ["UV", "VIS"],            # STIS
+    "G430M" : ["UV", "VIS"],            # STIS
+    "G570H" : ["VIS", "NIR"],           # STIS
+    "G650L" : ["UV", "VIS", "NIR"],     # STIS
+    "G750L" : ["VIS", "NIR"],           # STIS
+    "G750M" : ["VIS", "NIR"],           # STIS
+    "G780H" : ["VIS", "NIR"],           # STIS
+    "G800L" : ["VIS", "NIR"],           # STIS
+    "POL0UV": ["UV", "VIS"],            # ACS
+    "POL0V" : ["VIS", "NIR"],           # ACS
+    "POL120UV": ["UV", "VIS"],          # ACS
+    "POL120V" : ["VIS", "NIR"],         # ACS
+    "POL60UV" : ["UV", "VIS"],          # ACS
+    "POL60V"  : ["VIS", "NIR"],         # ACS
     "PRISM1"  : ["UV", "VIS"],          # FOC
     "PRISM2"  : ["UV", "VIS"],          # FOC
     "PRISM3"  : ["UV", "VIS"],          # FOC

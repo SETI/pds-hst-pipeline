@@ -488,19 +488,42 @@ def label_hst_fits_filepaths(filepaths, root='', *,
     # "ipppssoot_dict": dictionary for this file's IPPPSSOOT.
     #####################################################################################
 
-    removed_ipppssoot = []
+# This isn't right, because the absence of a TRL file doesn't mean that we should
+# completely ignore the associated data files.
+
+#     removed_ipppssoot = []
+#     for ipppssoot, ipppssoot_dict in info_by_ipppssoot.items():
+#         all_suffixes = set(ipppssoot_dict.keys())
+#         ipppssoot_dict['all_suffixes'] = all_suffixes
+#         ipppssoot_dict['ipppssoot'] = ipppssoot
+#         # ipppssoot_dict['timetags'] = trl_timetags_by_ipppssoot[ipppssoot]
+#         try:
+#             ipppssoot_dict['timetags'] = trl_timetags_by_ipppssoot[ipppssoot]
+#         except KeyError:
+#             # If trl timetags is missing, we remove this ipppssoot from info_by_ipppssoot
+#             logger.error(f'Missing trl timetags for {ipppssoot}')
+#             removed_ipppssoot.append(ipppssoot)
+#
+#         ipppssoot_dict['by_basename'] = info_by_basename
+#         ipppssoot_dict['by_ipppssoot'] = info_by_ipppssoot
+#
+#         for suffix in all_suffixes:
+#             basenamed_dict = ipppssoot_dict[suffix]
+#             basenamed_dict['by_basename'] = info_by_basename
+#             basenamed_dict['by_ipppssoot'] = info_by_ipppssoot
+#             basenamed_dict['ipppssoot_dict'] = ipppssoot_dict
+#
+#     # Bypass this ipppssoot by removing them from info_by_ipppssoot & info_by_basename
+#     for ipppssoot in removed_ipppssoot:
+#         del info_by_ipppssoot[ipppssoot]
+#         for basename in list(info_by_basename):
+#             if ipppssoot in basename:
+#                 del info_by_basename[basename]
+
     for ipppssoot, ipppssoot_dict in info_by_ipppssoot.items():
         all_suffixes = set(ipppssoot_dict.keys())
         ipppssoot_dict['all_suffixes'] = all_suffixes
         ipppssoot_dict['ipppssoot'] = ipppssoot
-        # ipppssoot_dict['timetags'] = trl_timetags_by_ipppssoot[ipppssoot]
-        try:
-            ipppssoot_dict['timetags'] = trl_timetags_by_ipppssoot[ipppssoot]
-        except KeyError:
-            # If trl timetags is missing, we remove this ipppssoot from info_by_ipppssoot
-            logger.error(f'Missing trl timetags for {ipppssoot}')
-            removed_ipppssoot.append(ipppssoot)
-
         ipppssoot_dict['by_basename'] = info_by_basename
         ipppssoot_dict['by_ipppssoot'] = info_by_ipppssoot
 
@@ -510,13 +533,12 @@ def label_hst_fits_filepaths(filepaths, root='', *,
             basenamed_dict['by_ipppssoot'] = info_by_ipppssoot
             basenamed_dict['ipppssoot_dict'] = ipppssoot_dict
 
-    # Bypass this ipppssoot by removing them from info_by_ipppssoot & info_by_basename
-    for ipppssoot in removed_ipppssoot:
-        del info_by_ipppssoot[ipppssoot]
-        for basename in list(info_by_basename):
-            if ipppssoot in basename:
-                del info_by_basename[basename]
-
+        # If there's no TRL file, don't use a mapping from date to date-time
+        if ipppssoot in trl_timetags_by_ipppssoot:
+            ipppssoot_dict['timetags'] = trl_timetags_by_ipppssoot[ipppssoot]
+        else:
+            ipppssoot_dict['timetags'] = {}
+            logger.warn(f'Missing trl timetags for {ipppssoot}')
 
     ######################################################################################
     # "associates"        : list of tuples (associated ipppssoot, memtype) for this
@@ -928,9 +950,10 @@ def label_hst_fits_filepaths(filepaths, root='', *,
     if reset_dates:
         for basename, basename_dict in info_by_basename.items():
             modification_date = basename_dict['modification_date']
-            fullpath = basename_dict['fullpath']
-            set_file_timestamp(fullpath, modification_date)
-            logger.info('Modification date set to ' + modification_date, fullpath)
+            if modification_date != '0000':     # year zero means date is unknown
+                fullpath = basename_dict['fullpath']
+                set_file_timestamp(fullpath, modification_date)
+                logger.info('Modification date set to ' + modification_date, fullpath)
 
     ######################################################################################
     # Fill in the description fields for all data objects, i.e.,
@@ -1100,13 +1123,16 @@ def read_associations(hdulist, basename):
 ##########################################################################################
 
 def fill_modification_dates(basename_dict, info_by_ipppssoot, logger):
+    """Fill in the modification date associated with this basename."""
 
     # Return if this modification date is already filled in
     if basename_dict.get('modification_date', ''):
         return
 
+    # Determine the earliest date for this IPPPSSOOT from the TRL if any
     ipppssoot_dict = basename_dict['ipppssoot_dict']
-    earliest_trl_date = min(ipppssoot_dict['timetags'].values())
+    trl_dates = list(ipppssoot_dict['timetags'].values())
+    earliest_trl_date = min(trl_dates) if trl_dates else '0000'     # year zero
 
     # If this file has no internal date, make sure its date is no earlier than the
     # earliest TRL date
@@ -1135,8 +1161,9 @@ def fill_modification_dates(basename_dict, info_by_ipppssoot, logger):
     latest_date = ipppssoot_dict['timetags'].get(latest_date, latest_date)
 
     basename_dict['modification_date'] = latest_date
-    logger.debug('Modification date = ' + latest_date, basename_dict['fullpath'])
-
-    return
+    if latest_date == '0000':
+        logger.warn('Modification date unknown', basename_dict['fullpath'])
+    else:
+        logger.debug('Modification date = ' + latest_date, basename_dict['fullpath'])
 
 ##########################################################################################

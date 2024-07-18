@@ -11,7 +11,7 @@
 #
 ################################################################################
 
-from target_identifications.hst import hst_target_identifications
+from target_identifications import hst_target_identifications
 from target_identifications.TESTS.SPT_TESTS import SPT_TESTS
 
 errors_raised = 0
@@ -19,9 +19,9 @@ missing_targets = 0
 
 for (filename,d) in SPT_TESTS:
     try:
-        targets = hst_target_identifications(d)
+        targets = hst_target_identifications(d, filename)
     except Exception as e:
-        print(filename, 'ERROR', e)
+        print('****', filename, 'ERROR', e)
         errors_raised += 1
     else:
         short_lids = [t[-1].rpartition('target:')[-1] for t in targets]

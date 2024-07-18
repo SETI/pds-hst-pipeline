@@ -45,7 +45,7 @@ import bs4
 import math
 import os
 import re
-import urllib
+import requests
 
 from . import lids
 from .OLD_STYLE_KBO_IDS import OLD_STYLE_KBO_IDS, NEW_STYLE_KBO_IDS
@@ -116,9 +116,12 @@ def get_mpc_info(key):
 
     # Otherwise, retrieve from MPC
     else:
-        url = URL_PREFIX + urllib.parse.quote(str(key), safe='/')
-        with urllib.request.urlopen(url) as response:
-            html = response.read()
+        url = URL_PREFIX + requests.utils.quote(str(key), safe='/')
+        request = requests.get(url, allow_redirects=True)
+        if request.status_code == 200:
+            html = request.content
+        else:
+            html = b''
 
         if WEBCACHING:
             # Delete observation table because it can be huge
@@ -142,10 +145,10 @@ def get_mpc_info(key):
 
     # Mal-formed pages indicate an unknown error
     if len(divs) == 0:
-        raise ValueError('No main <div> for ' + name)
+        raise ValueError('No main <div> for ' + key)
 
     if len(divs) > 1:
-        raise ValueError('Multiple main <div>s for ' + name)
+        raise ValueError('Multiple main <div>s for ' + key)
 
     # One sign of failure
     try:

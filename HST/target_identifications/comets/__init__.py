@@ -63,7 +63,7 @@ COMET_DESIGNATION_PATTERN = r'[A-Z]/-?\d{1,4} [A-Z][A-Z]?[0-9]*'
 COMET_DESIGNATION_REGEX = re.compile(COMET_DESIGNATION_PATTERN)
 
 OLD_REGEX1 = re.compile(r'\d{4}[a-z]1?')            # E.g., 1987g1, 1869a
-OLD_REGEX2 = re.compile('-?\d{1,4}(| [IVX]+)')      # E.g., -239, 1948 VII
+OLD_REGEX2 = re.compile(r'-?\d{1,4}(| [IVX]+)')     # E.g., -239, 1948 VII
 
 NUMBER_SUFFIX_PATTERN = r'(.+?)[- ](\d+)'
 NUMBER_SUFFIX_REGEX = re.compile(NUMBER_SUFFIX_PATTERN)
